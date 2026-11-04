@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>낱말 노트 — 영어 단어 학습</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23221e1a'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='16' fill='%23f3eee6' font-family='Georgia'%3EN%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,650&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f3eee6;
+      --card: #fffdf8;
+      --ink: #221e1a;
+      --muted: #6f675e;
+      --line: #e4dcd0;
+      --accent: #b5522a;
+      --accent-ink: #fff7f2;
+      --good: #1f6b4a;
+      --good-soft: #e5f3ec;
+      --bad: #a33b32;
+      --bad-soft: #f8e8e5;
+      --chip: #efe6d8;
+      --shadow: 0 18px 50px rgba(70, 44, 22, 0.08);
+      --serif: Fraunces, "Iowan Old Style", Palatino, Georgia, serif;
+      --sans: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--sans);
+      background:
+        radial-gradient(1100px 480px at 8% -10%, #f6e4d0 0%, transparent 55%),
+        radial-gradient(900px 420px at 100% 0%, #e4efe8 0%, transparent 48%),
+        var(--paper);
+    }
+    button, input { font-family: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .app {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-end;
+      margin-bottom: 22px;
+    }
+    .brand h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(36px, 5vw, 52px);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .brand p { margin: 8px 0 0; color: var(--muted); }
+
+    .stats { display: flex; gap: 18px; align-items: flex-end; }
+    .stat { min-width: 72px; }
+    .stat b {
+      display: block;
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .bar {
+      margin-top: 10px;
+      height: 4px;
+      width: 148px;
+      background: #e7dfd3;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar i {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .side, .panel, .list-panel {
+      background: rgba(255, 253, 248, 0.78);
+      border: 1px solid rgba(228, 220, 208, 0.9);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+    .side { padding: 16px; position: sticky; top: 16px; }
+
+    .modes { display: grid; gap: 6px; }
+    .mode, .chip, .btn, .option, .icon-btn {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink);
+    }
+    .mode {
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    .mode.is-active { background: var(--ink); color: var(--paper); }
+    .mode small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+    .mode.is-active small { color: #d9d0c4; }
+
+    .filters { margin-top: 18px; }
+    .filters p, .field-label {
+      margin: 14px 0 8px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--chip);
+      font-size: 13px;
+    }
+    .chip.is-active { background: var(--accent); color: var(--accent-ink); }
+
+    .check {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .ghost {
+      margin-top: 14px;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px dashed var(--line);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .panel, .list-panel { padding: 22px; min-height: 460px; }
+    .kicker {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .pips { display: inline-flex; gap: 4px; }
+    .pip {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      background: #e3dacd;
+    }
+    .pip.on { background: var(--good); }
+
+    .flip {
+      position: relative;
+      height: 320px;
+      perspective: 1200px;
+    }
+    .flip-inner {
+      position: relative;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .flip.is-flipped .flip-inner { transform: rotateY(180deg); }
+    .face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 28px 28px 24px;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.55), transparent 30%),
+        var(--card);
+      border: 1px solid #eadfce;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .face.back { transform: rotateY(180deg); }
+    .face button.cover {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      background: transparent;
+      border-radius: 18px;
+    }
+    .meta { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+    .word {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(42px, 6vw, 68px);
+      font-weight: 650;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+    }
+    .pos { margin: 12px 0 0; color: var(--accent); font-size: 14px; }
+    .meaning {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(32px, 4vw, 46px);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    .example { margin: 18px 0 0; font-size: 16px; }
+    .example em { font-family: var(--serif); font-style: italic; font-size: 18px; }
+    .ex-ko { margin: 6px 0 0; color: var(--muted); }
+
+    .actions, .quiz-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .btn {
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-weight: 550;
+    }
+    .btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .btn.good { background: var(--good); color: white; border-color: var(--good); }
+    .btn.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+
+    .seg { display: inline-flex; padding: 3px; background: var(--chip); border-radius: 999px; }
+    .seg button { border: 0; background: transparent; padding: 6px 10px; border-radius: 999px; }
+    .seg button.is-active { background: var(--card); }
+
+    .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    .option {
+      text-align: left;
+      min-height: 64px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-size: 16px;
+    }
+    .option.is-correct { background: var(--good-soft); border-color: var(--good); }
+    .option.is-wrong { background: var(--bad-soft); border-color: var(--bad); }
+    .prompt {
+      margin: 8px 0 0;
+      font-family: var(--serif);
+      font-size: clamp(34px, 5vw, 52px);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    .feedback { min-height: 24px; margin: 14px 0 0; font-weight: 500; }
+    .feedback.ok { color: var(--good); }
+    .feedback.no { color: var(--bad); }
+
+    .spell-form { margin-top: 18px; }
+    .spell-input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-family: var(--serif);
+      font-size: 28px;
+      letter-spacing: -0.02em;
+    }
+    .spell-input.is-bad { border-color: var(--bad); background: var(--bad-soft); }
+    .spell-input.is-ok { border-color: var(--good); background: var(--good-soft); }
+    .hint-line { margin-top: 10px; color: var(--muted); letter-spacing: 0.18em; font-family: var(--serif); }
+
+    .list-tools { display: flex; gap: 8px; margin-bottom: 8px; }
+    .list-tools input, .list-tools select {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--ink);
+    }
+    .list-tools input { flex: 1; }
+    .word-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.6fr) auto auto;
+      gap: 8px 16px;
+      align-items: center;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .word-row b { font-family: var(--serif); font-size: 20px; font-weight: 650; }
+    .word-row .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--card);
+    }
+    .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+    .keys { margin: 14px 0 0; color: var(--muted); font-size: 12px; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--ink);
+      color: var(--paper);
+      padding: 10px 14px;
+      border-radius: 999px;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s ease;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .modes { grid-template-columns: 1fr 1fr; }
+      .options, .word-row { grid-template-columns: 1fr; }
+      .word-row { align-items: start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .flip-inner { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>낱말 노트</h1>
+        <p>카드를 뒤집고, 뜻을 고르고, 철자를 쓰며 영어 단어를 익힙니다.</p>
+      </div>
+      <div>
+        <div class="stats">
+          <div class="stat"><b id="statKnown">0</b><span>익힌 단어</span></div>
+          <div class="stat"><b id="statToday">0/10</b><span>오늘 학습</span></div>
+          <div class="stat"><b id="statStreak">0</b><span>연속 일수</span></div>
+        </div>
+        <div class="bar" aria-hidden="true"><i id="todayBar"></i></div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="side">
+        <div class="modes" role="tablist" aria-label="학습 방식">
+          <button class="mode is-active" type="button" data-mode="cards">플래시카드<small>뜻 떠올리고 확인</small></button>
+          <button class="mode" type="button" data-mode="quiz">퀴즈<small>네 개 중 고르기</small></button>
+          <button class="mode" type="button" data-mode="spell">철자<small>듣고 따라 쓰기</small></button>
+          <button class="mode" type="button" data-mode="list">단어 목록<small>전체 찾아보기</small></button>
+        </div>
+        <div class="filters">
+          <p>주제</p>
+          <div class="chips" id="topicChips"></div>
+          <p>난이도</p>
+          <div class="chips" id="levelChips"></div>
+        </div>
+        <label class="check"><input id="autoSpeak" type="checkbox" checked> 문제가 나오면 발음</label>
+        <button class="ghost" id="resetBtn" type="button">학습 기록 지우기</button>
+      </aside>
+      <main id="view"></main>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+    // 단어를 더 넣으려면 아래 배열에 객체를 추가하세요.
+    // id는 서로 달라야 합니다.
+    // topic: daily | school | emotion | travel | work | core
+    // level: basic | mid
+    // pos: n 명사, v 동사, adj 형용사, adv 부사
+    const WORDS = [
+      { id: "borrow", en: "borrow", ko: "빌리다", pos: "v", topic: "daily", level: "basic", example: "Can I borrow your pen?", exampleKo: "펜 좀 빌려도 될까?" },
+      { id: "barely", en: "barely", ko: "간신히", pos: "adv", topic: "daily", level: "mid", example: "I barely caught the bus.", exampleKo: "나는 간신히 버스를 탔다." },
+      { id: "enormous", en: "enormous", ko: "거대한", pos: "adj", topic: "daily", level: "mid", example: "The building looks enormous.", exampleKo: "그 건물은 거대해 보인다." },
+      { id: "delicious", en: "delicious", ko: "맛있는", pos: "adj", topic: "daily", level: "basic", example: "This soup is delicious.", exampleKo: "이 수프는 맛있다." },
+      { id: "neighbor", en: "neighbor", ko: "이웃", pos: "n", topic: "daily", level: "basic", example: "My neighbor walks her dog every morning.", exampleKo: "이웃이 매일 아침 개를 산책시킨다.", also: ["neighbour"] },
+      { id: "appointment", en: "appointment", ko: "약속, 예약", pos: "n", topic: "daily", level: "basic", example: "I have a dentist appointment at three.", exampleKo: "3시에 치과 예약이 있다." },
+      { id: "laundry", en: "laundry", ko: "빨래", pos: "n", topic: "daily", level: "basic", example: "I need to do the laundry tonight.", exampleKo: "오늘 밤에 빨래를 해야 한다." },
+      { id: "groceries", en: "groceries", ko: "식료품", pos: "n", topic: "daily", level: "basic", example: "We buy groceries on Sundays.", exampleKo: "우리는 일요일에 식료품을 산다." },
+      { id: "assignment", en: "assignment", ko: "과제", pos: "n", topic: "school", level: "basic", example: "The assignment is due on Friday.", exampleKo: "과제는 금요일까지다." },
+      { id: "deadline", en: "deadline", ko: "마감 기한", pos: "n", topic: "school", level: "mid", example: "The deadline is tomorrow morning.", exampleKo: "마감은 내일 아침이다." },
+      { id: "semester", en: "semester", ko: "학기", pos: "n", topic: "school", level: "mid", example: "This semester feels busy.", exampleKo: "이번 학기는 바쁘게 느껴진다." },
+      { id: "lecture", en: "lecture", ko: "강의", pos: "n", topic: "school", level: "mid", example: "The lecture started ten minutes late.", exampleKo: "강의가 10분 늦게 시작됐다." },
+      { id: "graduate", en: "graduate", ko: "졸업하다", pos: "v", topic: "school", level: "mid", example: "She will graduate next June.", exampleKo: "그녀는 내년 6월에 졸업한다." },
+      { id: "scholarship", en: "scholarship", ko: "장학금", pos: "n", topic: "school", level: "mid", example: "He won a scholarship.", exampleKo: "그는 장학금을 받았다." },
+      { id: "vocabulary", en: "vocabulary", ko: "어휘", pos: "n", topic: "school", level: "mid", example: "Reading builds your vocabulary.", exampleKo: "독서는 어휘를 늘려 준다." },
+      { id: "attend", en: "attend", ko: "참석하다", pos: "v", topic: "school", level: "basic", example: "Did you attend the class?", exampleKo: "수업에 참석했니?" },
+      { id: "anxious", en: "anxious", ko: "불안한", pos: "adj", topic: "emotion", level: "mid", example: "I feel anxious before tests.", exampleKo: "나는 시험 전에 불안하다." },
+      { id: "grateful", en: "grateful", ko: "고마워하는", pos: "adj", topic: "emotion", level: "basic", example: "I am grateful for your help.", exampleKo: "도와줘서 고마워." },
+      { id: "confident", en: "confident", ko: "자신 있는", pos: "adj", topic: "emotion", level: "mid", example: "She looks confident on stage.", exampleKo: "그녀는 무대에서 자신 있어 보인다." },
+      { id: "disappointed", en: "disappointed", ko: "실망한", pos: "adj", topic: "emotion", level: "mid", example: "He was disappointed with the result.", exampleKo: "그는 결과에 실망했다." },
+      { id: "proud", en: "proud", ko: "자랑스러운", pos: "adj", topic: "emotion", level: "basic", example: "My parents are proud of me.", exampleKo: "부모님이 나를 자랑스러워하신다." },
+      { id: "relieved", en: "relieved", ko: "안도한", pos: "adj", topic: "emotion", level: "mid", example: "I was relieved to hear the news.", exampleKo: "그 소식을 듣고 안도했다." },
+      { id: "lonely", en: "lonely", ko: "외로운", pos: "adj", topic: "emotion", level: "basic", example: "Living alone can feel lonely.", exampleKo: "혼자 살면 외로울 수 있다." },
+      { id: "jealous", en: "jealous", ko: "질투하는", pos: "adj", topic: "emotion", level: "mid", example: "Don't be jealous of her success.", exampleKo: "그녀의 성공을 질투하지 마." },
+      { id: "luggage", en: "luggage", ko: "짐", pos: "n", topic: "travel", level: "basic", example: "Please watch your luggage.", exampleKo: "짐을 잘 지키세요." },
+      { id: "departure", en: "departure", ko: "출발", pos: "n", topic: "travel", level: "mid", example: "Our departure time is 8 a.m.", exampleKo: "출발 시간은 오전 8시다." },
+      { id: "arrival", en: "arrival", ko: "도착", pos: "n", topic: "travel", level: "basic", example: "The arrival was delayed by rain.", exampleKo: "비 때문에 도착이 늦어졌다." },
+      { id: "reservation", en: "reservation", ko: "예약", pos: "n", topic: "travel", level: "mid", example: "I made a reservation for two.", exampleKo: "두 명으로 예약했다." },
+      { id: "destination", en: "destination", ko: "목적지", pos: "n", topic: "travel", level: "mid", example: "Paris is our destination.", exampleKo: "파리가 우리의 목적지다." },
+      { id: "delay", en: "delay", ko: "지연시키다", pos: "v", topic: "travel", level: "mid", example: "The rain delayed the flight.", exampleKo: "비 때문에 항공편이 지연됐다." },
+      { id: "souvenir", en: "souvenir", ko: "기념품", pos: "n", topic: "travel", level: "mid", example: "I bought a souvenir for my sister.", exampleKo: "여동생에게 줄 기념품을 샀다." },
+      { id: "colleague", en: "colleague", ko: "동료", pos: "n", topic: "work", level: "mid", example: "A colleague helped me with the report.", exampleKo: "동료가 보고서를 도와줬다." },
+      { id: "salary", en: "salary", ko: "급여", pos: "n", topic: "work", level: "mid", example: "Her salary increased this year.", exampleKo: "올해 그녀의 급여가 올랐다." },
+      { id: "schedule", en: "schedule", ko: "일정", pos: "n", topic: "work", level: "basic", example: "My schedule is full today.", exampleKo: "오늘 일정이 가득하다." },
+      { id: "negotiate", en: "negotiate", ko: "협상하다", pos: "v", topic: "work", level: "mid", example: "They negotiated the price.", exampleKo: "그들은 가격을 협상했다." },
+      { id: "experience", en: "experience", ko: "경험", pos: "n", topic: "work", level: "basic", example: "Travel is a great experience.", exampleKo: "여행은 멋진 경험이다." },
+      { id: "achieve", en: "achieve", ko: "이루다", pos: "v", topic: "core", level: "mid", example: "She achieved her goal.", exampleKo: "그녀는 목표를 이뤘다." },
+      { id: "improve", en: "improve", ko: "개선하다", pos: "v", topic: "core", level: "basic", example: "I want to improve my English.", exampleKo: "영어를 늘리고 싶다." },
+      { id: "suggest", en: "suggest", ko: "제안하다", pos: "v", topic: "core", level: "basic", example: "I suggest taking a break.", exampleKo: "잠깐 쉬자고 제안할게." },
+      { id: "refuse", en: "refuse", ko: "거절하다", pos: "v", topic: "core", level: "basic", example: "He refused the offer.", exampleKo: "그는 제안을 거절했다." },
+      { id: "admit", en: "admit", ko: "인정하다", pos: "v", topic: "core", level: "mid", example: "She admitted her mistake.", exampleKo: "그녀는 실수를 인정했다." },
+      { id: "hesitate", en: "hesitate", ko: "망설이다", pos: "v", topic: "core", level: "mid", example: "Don't hesitate to ask.", exampleKo: "묻는 것을 망설이지 마." },
+      { id: "recognize", en: "recognize", ko: "알아보다", pos: "v", topic: "core", level: "mid", example: "I did not recognize him at first.", exampleKo: "처음에는 그를 알아보지 못했다.", also: ["recognise"] },
+      { id: "pretend", en: "pretend", ko: "척하다", pos: "v", topic: "core", level: "mid", example: "He pretended to be asleep.", exampleKo: "그는 자는 척했다." },
+      { id: "available", en: "available", ko: "시간이 되는", pos: "adj", topic: "core", level: "mid", example: "Are you available tomorrow?", exampleKo: "내일 시간 돼?" },
+      { id: "necessary", en: "necessary", ko: "필요한", pos: "adj", topic: "core", level: "basic", example: "Sleep is necessary.", exampleKo: "잠은 필요하다." },
+      { id: "convenient", en: "convenient", ko: "편리한", pos: "adj", topic: "core", level: "basic", example: "This shop is convenient.", exampleKo: "이 가게는 편리하다." },
+      { id: "sufficient", en: "sufficient", ko: "충분한", pos: "adj", topic: "core", level: "mid", example: "One hour is sufficient.", exampleKo: "한 시간이면 충분하다." }
+    ];
+
+    const TOPICS = [
+      ["all", "전체"],
+      ["daily", "일상"],
+      ["school", "학교"],
+      ["emotion", "감정"],
+      ["travel", "여행"],
+      ["work", "일"],
+      ["core", "핵심"]
+    ];
+    const LEVELS = [
+      ["all", "전체"],
+      ["basic", "초급"],
+      ["mid", "중급"]
+    ];
+    const POS = { n: "명사", v: "동사", adj: "형용사", adv: "부사" };
+    const TOPIC_LABEL = Object.fromEntries(TOPICS);
+    const KEY = "natmal-note-v1";
+    const GOAL = 10;
+
+    const state = {
+      mode: "cards",
+      topic: "all",
+      level: "all",
+      ask: "en",
+      flipped: false,
+      card: null,
+      quiz: null,
+      spell: null,
+      listQuery: "",
+      listStatus: "all",
+      unlocked: false,
+      lockUntil: 0
+    };
+
+    let saveData = load();
+
+    function load() {
+      const blank = { mastery: {}, dailyDate: "", dailyCount: 0, streak: 0, streakLast: "", autoSpeak: true, topic: "all", level: "all", mode: "cards", ask: "en" };
+      try {
+        const raw = localStorage.getItem(KEY);
+        return raw ? { ...blank, ...JSON.parse(raw) } : blank;
+      } catch (err) {
+        return blank;
+      }
+    }
+
+    function persist() {
+      saveData.topic = state.topic;
+      saveData.level = state.level;
+      saveData.mode = state.mode;
+      saveData.ask = state.ask;
+      saveData.autoSpeak = document.getElementById("autoSpeak").checked;
+      localStorage.setItem(KEY, JSON.stringify(saveData));
+    }
+
+    function localDate(d = new Date()) {
+      const z = (n) => String(n).padStart(2, "0");
+      return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
+    }
+
+    function yesterday() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return localDate(d);
+    }
+
+    function masteryOf(id) {
+      return saveData.mastery[id] || 0;
+    }
+
+    function visibleStreak() {
+      if (saveData.streakLast === localDate() || saveData.streakLast === yesterday()) return saveData.streak || 0;
+      return 0;
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function shuffle(list) {
+      const a = list.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function filteredWords() {
+      return WORDS.filter((w) => (state.topic === "all" || w.topic === state.topic) && (state.level === "all" || w.level === state.level));
+    }
+
+    function pickWord(list, currentId) {
+      const pool = list.filter((w) => w.id !== currentId);
+      const src = pool.length ? pool : list;
+      if (!src.length) return null;
+      const weights = src.map((w) => 4 - masteryOf(w.id));
+      let total = weights.reduce((sum, n) => sum + n, 0);
+      let r = Math.random() * total;
+      for (let i = 0; i < src.length; i++) {
+        r -= weights[i];
+        if (r <= 0) return src[i];
+      }
+      return src[src.length - 1];
+    }
+
+    function answersOf(word) {
+      return [word.en].concat(word.also || []).map((s) => s.toLowerCase());
+    }
+
+    function pips(n) {
+      return '<span class="pips" aria-label="익힘 ' + n + '/3">' + [0, 1, 2].map((i) => '<i class="pip' + (i < n ? " on" : "") + '"></i>').join("") + "</span>";
+    }
+
+    function say(text, rate) {
+      if (!window.speechSynthesis) {
+        toast("이 브라우저는 소리 내어 읽기를 지원하지 않아요.");
+        return;
+      }
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-US";
+      utter.rate = rate || 0.94;
+      const voice = speechSynthesis.getVoices().find((v) => v.lang === "en-US") || speechSynthesis.getVoices().find((v) => v.lang && v.lang.startsWith("en"));
+      if (voice) utter.voice = voice;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
+
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 1500);
+    }
+
+    function gated() {
+      const now = Date.now();
+      if (now < state.lockUntil) return false;
+      state.lockUntil = now + 280;
+      return true;
+    }
+
+    function grade(id, delta) {
+      const today = localDate();
+      if (saveData.dailyDate !== today) {
+        saveData.dailyDate = today;
+        saveData.dailyCount = 0;
+      }
+      saveData.dailyCount += 1;
+      if (saveData.streakLast !== today) {
+        saveData.streak = saveData.streakLast === yesterday() ? (saveData.streak || 0) + 1 : 1;
+        saveData.streakLast = today;
+      }
+      const next = Math.max(0, Math.min(3, masteryOf(id) + delta));
+      saveData.mastery[id] = next;
+      persist();
+      renderStats();
+      if (saveData.dailyCount === GOAL) toast("오늘 목표 10개를 채웠어요.");
+    }
+
+    function renderStats() {
+      const known = WORDS.filter((w) => masteryOf(w.id) >= 3).length;
+      const today = saveData.dailyDate === localDate() ? saveData.dailyCount : 0;
+      document.getElementById("statKnown").textContent = known + "/" + WORDS.length;
+      document.getElementById("statToday").textContent = today + "/" + GOAL;
+      document.getElementById("statStreak").textContent = String(visibleStreak());
+      document.getElementById("todayBar").style.width = Math.min(100, (today / GOAL) * 100) + "%";
+    }
+
+    function renderChips() {
+      document.getElementById("topicChips").innerHTML = TOPICS.map(([id, label]) =>
+        '<button class="chip' + (state.topic === id ? " is-active" : "") + '" type="button" data-topic="' + id + '">' + label + "</button>"
+      ).join("");
+      document.getElementById("levelChips").innerHTML = LEVELS.map(([id, label]) =>
+        '<button class="chip' + (state.level === id ? " is-active" : "") + '" type="button" data-level="' + id + '">' + label + "</button>"
+      ).join("");
+      document.querySelectorAll(".mode").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.mode === state.mode));
+    }
+
+    function scopeLine(list) {
+      const topic = TOPIC_LABEL[state.topic] || "전체";
+      const level = state.level === "basic" ? "초급" : state.level === "mid" ? "중급" : "모든 난이도";
+      const left = list.filter((w) => masteryOf(w.id) < 3).length;
+      return topic + " · " + level + " · " + list.length + "개 · 남은 단어 " + left + "개";
+    }
+
+    function renderView() {
+      if (window.speechSynthesis) speechSynthesis.cancel();
+      const view = document.getElementById("view");
+      const list = filteredWords();
+      if (state.mode === "cards") view.innerHTML = renderCards(list);
+      else if (state.mode === "quiz") view.innerHTML = renderQuiz(list);
+      else if (state.mode === "spell") view.innerHTML = renderSpell(list);
+      else view.innerHTML = renderList(list);
+
+      const auto = document.getElementById("autoSpeak").checked && state.unlocked;
+      if (auto && state.mode === "cards" && state.card) say(state.card.en);
+      if (auto && state.mode === "quiz" && state.quiz && state.quiz.ask === "en" && !state.quiz.picked) say(state.quiz.word.en);
+      if (state.mode === "spell") {
+        const input = document.getElementById("spellInput");
+        if (input) input.focus();
+      }
+    }
+
+    function renderCards(list) {
+      if (!list.length) return '<section class="panel"><p class="empty">이 범위에는 단어가 없어요. 주제나 난이도를 바꿔 보세요.</p></section>';
+      if (!state.card || !list.some((w) => w.id === state.card.id)) state.card = pickWord(list, null);
+      const w = state.card;
+      return '<section class="panel">' +
+        '<div class="kicker"><span>' + esc(scopeLine(list)) + '</span>' + pips(masteryOf(w.id)) + "</div>" +
+        '<div class="flip' + (state.flipped ? " is-flipped" : "") + '"><div class="flip-inner">' +
+          '<div class="face front"><p class="meta">' + esc(TOPIC_LABEL[w.topic]) + " · " + (w.level === "basic" ? "초급" : "중급") + '</p>' +
+            '<p class="word" lang="en">' + esc(w.en) + '</p><p class="pos">' + POS[w.pos] + '</p>' +
+            '<button class="cover" type="button" data-action="flip" aria-label="뜻 보기"></button></div>' +
+          '<div class="face back"><p class="meta" lang="en">' + esc(w.en) + '</p>' +
+            '<p class="meaning">' + esc(w.ko) + '</p>' +
+            '<p class="example"><em lang="en">' + esc(w.example) + '</em></p><p class="ex-ko">' + esc(w.exampleKo) + '</p>' +
+            '<button class="cover" type="button" data-action="flip" aria-label="단어 보기"></button></div>' +
+        "</div></div>" +
+        '<div class="actions">' +
+          '<button class="btn primary" type="button" data-action="flip">' + (state.flipped ? "단어 보기" : "뜻 보기") + "</button>" +
+          '<button class="btn" type="button" data-action="speak">발음</button>' +
+          '<button class="btn" type="button" data-action="slow">천천히</button>' +
+          '<button class="btn bad" type="button" data-action="miss">아직 몰라요</button>' +
+          '<button class="btn good" type="button" data-action="know">알아요</button>' +
+          '<button class="btn" type="button" data-action="skip">건너뛰기</button>' +
+        "</div>" +
+        '<p class="keys">스페이스 뒤집기 · 1 몰라요 · 2 알아요 · → 건너뛰기 · S 발음</p>' +
+      "</section>";
+    }
+
+    function ensureQuiz(list) {
+      if (list.length < 4) {
+        state.quiz = null;
+        return;
+      }
+      if (state.quiz && list.some((w) => w.id === state.quiz.word.id) && !state.quiz.stale) return;
+      const word = pickWord(list, state.quiz && state.quiz.word.id);
+      const same = WORDS.filter((w) => w.id !== word.id && w.topic === word.topic);
+      const rest = WORDS.filter((w) => w.id !== word.id && w.topic !== word.topic);
+      const options = shuffle([word].concat(shuffle(same.concat(rest)).slice(0, 3)));
+      state.quiz = { word, options, ask: state.ask, picked: null, stale: false };
+    }
+
+    function renderQuiz(list) {
+      if (list.length < 4) return '<section class="panel"><p class="empty">퀴즈는 선택지가 네 개라서, 단어가 4개 이상인 범위에서 풀 수 있어요.</p></section>';
+      ensureQuiz(list);
+      const q = state.quiz;
+      const showEn = q.ask === "en";
+      const prompt = showEn ? q.word.en : q.word.ko;
+      const choiceKey = showEn ? "ko" : "en";
+      const options = q.options.map((w, i) => {
+        let cls = "option";
+        if (q.picked) {
+          if (w.id === q.word.id) cls += " is-correct";
+          else if (w.id === q.picked) cls += " is-wrong";
+        }
+        return '<button class="' + cls + '" type="button" data-action="choose" data-id="' + w.id + '" ' + (q.picked ? "disabled" : "") + ">" +
+          (i + 1) + ". " + esc(w[choiceKey]) + "</button>";
+      }).join("");
+      let feedback = "";
+      if (q.picked) {
+        const ok = q.picked === q.word.id;
+        feedback = '<p class="feedback ' + (ok ? "ok" : "no") + '">' + (ok ? "맞았어요." : "정답은 " + esc(showEn ? q.word.ko : q.word.en) + " 입니다.") +
+          '</p><p class="example"><em lang="en">' + esc(q.word.example) + "</em></p><p class=\"ex-ko\">" + esc(q.word.exampleKo) + "</p>";
+      }
+      return '<section class="panel"><div class="kicker"><span>' + esc(scopeLine(list)) + '</span>' +
+        '<div class="seg"><button type="button" data-ask="en" class="' + (state.ask === "en" ? "is-active" : "") + '">영어 → 뜻</button>' +
+        '<button type="button" data-ask="ko" class="' + (state.ask === "ko" ? "is-active" : "") + '">뜻 → 영어</button></div></div>' +
+        '<p class="meta">' + (showEn ? "이 단어의 뜻은?" : "이 뜻의 영어 단어는?") + " · " + POS[q.word.pos] + "</p>" +
+        '<p class="prompt" lang="' + (showEn ? "en" : "ko") + '">' + esc(prompt) + "</p>" +
+        '<div class="options">' + options + "</div>" + feedback +
+        '<div class="quiz-actions">' +
+          (showEn ? '<button class="btn" type="button" data-action="speak">발음</button>' : "") +
+          (q.picked ? '<button class="btn primary" type="button" data-action="quiz-next">다음 문제</button>' : "") +
+        "</div>" +
+        '<p class="keys">숫자 키 1–4로 고를 수 있어요.</p></section>';
+    }
+
+    function ensureSpell(list) {
+      if (!list.length) {
+        state.spell = null;
+        return;
+      }
+      if (!state.spell || state.spell.stale || !list.some((w) => w.id === state.spell.word.id)) {
+        state.spell = { word: pickWord(list, state.spell && state.spell.word.id), hint: false, graded: false, stale: false };
+      }
+    }
+
+    function renderSpell(list) {
+      if (!list.length) return '<section class="panel"><p class="empty">이 범위에는 단어가 없어요.</p></section>';
+      ensureSpell(list);
+      const w = state.spell.word;
+      const blanks = state.spell.hint ? esc(w.en[0] + w.en.slice(1).replace(/[A-Za-z]/g, " _")) : "";
+      return '<section class="panel"><div class="kicker"><span>' + esc(scopeLine(list)) + "</span>" + pips(masteryOf(w.id)) + "</div>" +
+        '<p class="meta">' + esc(TOPIC_LABEL[w.topic]) + " · " + POS[w.pos] + " · 영어 철자를 입력하세요</p>" +
+        '<p class="prompt">' + esc(w.ko) + "</p>" +
+        '<form class="spell-form" id="spellForm">' +
+          '<input class="spell-input" id="spellInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="english" aria-label="영어 철자">' +
+          '<p class="hint-line">' + blanks + "</p>" +
+          '<p class="feedback" id="spellFeedback"></p>' +
+          '<div class="actions">' +
+            '<button class="btn primary" type="submit">확인</button>' +
+            '<button class="btn" type="button" data-action="hint">첫 글자</button>' +
+            '<button class="btn" type="button" data-action="speak">발음 듣기</button>' +
+            '<button class="btn" type="button" data-action="slow">천천히</button>' +
+            '<button class="btn" type="button" data-action="spell-next">다른 단어</button>' +
+          "</div></form>" +
+        '<p class="keys">엔터로 확인하고, 막히면 발음을 먼저 들어 보세요.</p></section>';
+    }
+
+    function renderList(list) {
+      const q = state.listQuery.trim().toLowerCase();
+      const rows = list.filter((w) => {
+        const known = masteryOf(w.id) >= 3;
+        if (state.listStatus === "known" && !known) return false;
+        if (state.listStatus === "left" && known) return false;
+        if (!q) return true;
+        return (w.en + " " + w.ko + " " + w.example).toLowerCase().includes(q);
+      });
+      const body = rows.length ? rows.map((w) =>
+        '<article class="word-row"><div><b lang="en">' + esc(w.en) + '</b><div class="sub">' + POS[w.pos] + " · " + esc(TOPIC_LABEL[w.topic]) + " · " + (w.level === "basic" ? "초급" : "중급") + "</div></div>" +
+        "<div><div>" + esc(w.ko) + '</div><div class="sub" lang="en">' + esc(w.example) + "</div></div>" +
+        "<div>" + pips(masteryOf(w.id)) + '</div><button class="icon-btn" type="button" data-action="speak-id" data-id="' + w.id + '" aria-label="' + esc(w.en) + ' 발음">▶</button></article>'
+      ).join("") : '<p class="empty">찾는 단어가 없어요.</p>';
+      return '<section class="list-panel"><div class="kicker"><span>' + esc(scopeLine(list)) + "</span></div>" +
+        '<div class="list-tools"><input id="listQuery" placeholder="영어 또는 뜻 검색" value="' + esc(state.listQuery) + '">' +
+        '<select id="listStatus"><option value="all"' + (state.listStatus === "all" ? " selected" : "") + '>모든 상태</option>' +
+        '<option value="left"' + (state.listStatus === "left" ? " selected" : "") + '>아직 익히는 중</option>' +
+        '<option value="known"' + (state.listStatus === "known" ? " selected" : "") + ">익힌 단어</option></select></div>" +
+        body + "</section>";
+    }
+
+    function nextCard(scored, delta) {
+      const list = filteredWords();
+      if (!state.card || !list.some((w) => w.id === state.card.id)) return;
+      if (!gated()) return;
+      if (scored) grade(state.card.id, delta);
+      state.card = pickWord(list, state.card.id);
+      state.flipped = false;
+      renderView();
+    }
+
+    function onViewClick(e) {
+      const ask = e.target.closest("[data-ask]");
+      if (ask) {
+        state.ask = ask.dataset.ask;
+        if (state.quiz) state.quiz.stale = true;
+        persist();
+        renderView();
+        return;
+      }
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (action === "flip") {
+        state.flipped = !state.flipped;
+        const flip = document.querySelector(".flip");
+        if (flip) flip.classList.toggle("is-flipped", state.flipped);
+        document.querySelectorAll(".btn[data-action='flip']").forEach((el) => {
+          el.textContent = state.flipped ? "단어 보기" : "뜻 보기";
+        });
+        return;
+      }
+      if (action === "speak" || action === "slow") {
+        const text = state.mode === "cards" ? state.card && state.card.en : state.mode === "quiz" ? state.quiz && state.quiz.word.en : state.spell && state.spell.word.en;
+        if (text) say(text, action === "slow" ? 0.68 : 0.94);
+        return;
+      }
+      if (action === "speak-id") {
+        const word = WORDS.find((w) => w.id === btn.dataset.id);
+        if (word) say(word.en);
+        return;
+      }
+      if ((action === "know" || action === "miss") && state.card) {
+        nextCard(true, action === "know" ? 1 : -1);
+        return;
+      }
+      if (action === "skip" && state.card) {
+        nextCard(false, 0);
+        return;
+      }
+      if (action === "choose" && state.quiz && !state.quiz.picked) {
+        const id = btn.dataset.id;
+        state.quiz.picked = id;
+        grade(state.quiz.word.id, id === state.quiz.word.id ? 1 : -1);
+        renderView();
+        if (id === state.quiz.word.id && state.quiz.ask === "ko") say(state.quiz.word.en);
+        return;
+      }
+      if (action === "quiz-next") {
+        state.quiz.stale = true;
+        renderView();
+        return;
+      }
+      if (action === "hint" && state.spell) {
+        state.spell.hint = true;
+        const line = document.querySelector(".hint-line");
+        const w = state.spell.word;
+        if (line) line.textContent = w.en[0] + w.en.slice(1).replace(/[A-Za-z]/g, " _");
+        return;
+      }
+      if (action === "spell-next" && state.spell) {
+        state.spell.stale = true;
+        renderView();
+      }
+    }
+
+    function onSpellSubmit(e) {
+      if (e.target.id !== "spellForm") return;
+      e.preventDefault();
+      if (!state.spell || state.spell.graded) return;
+      const input = document.getElementById("spellInput");
+      const feedback = document.getElementById("spellFeedback");
+      const typed = input.value.trim().toLowerCase().replace(/\s+/g, " ");
+      if (!typed) return;
+      const word = state.spell.word;
+      const ok = answersOf(word).includes(typed);
+      if (!state.spell.scored) {
+        state.spell.scored = true;
+        grade(word.id, ok ? 1 : -1);
+      }
+      input.classList.toggle("is-ok", ok);
+      input.classList.toggle("is-bad", !ok);
+      feedback.className = "feedback " + (ok ? "ok" : "no");
+      feedback.textContent = ok ? "맞았어요. " + word.example : "정답은 " + word.en + " 입니다. " + word.exampleKo;
+      if (ok) {
+        state.spell.graded = true;
+        say(word.en);
+        setTimeout(() => {
+          if (state.spell && state.spell.word.id === word.id) {
+            state.spell.stale = true;
+            renderView();
+          }
+        }, 700);
+      } else {
+        input.focus();
+        input.select();
+      }
+    }
+
+    function bind() {
+      document.querySelector(".modes").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-mode]");
+        if (!btn) return;
+        state.mode = btn.dataset.mode;
+        persist();
+        renderChips();
+        renderView();
+      });
+      document.querySelector(".side").addEventListener("click", (e) => {
+        const topic = e.target.closest("[data-topic]");
+        const level = e.target.closest("[data-level]");
+        if (topic) state.topic = topic.dataset.topic;
+        if (level) state.level = level.dataset.level;
+        if (topic || level) {
+          if (state.quiz) state.quiz.stale = true;
+          if (state.spell) state.spell.stale = true;
+          persist();
+          renderChips();
+          renderView();
+        }
+      });
+      document.getElementById("autoSpeak").addEventListener("change", persist);
+      document.getElementById("resetBtn").addEventListener("click", () => {
+        if (!confirm("이 브라우저에 저장된 학습 기록을 지울까요?")) return;
+        saveData = { mastery: {}, dailyDate: "", dailyCount: 0, streak: 0, streakLast: "", autoSpeak: document.getElementById("autoSpeak").checked, topic: state.topic, level: state.level, mode: state.mode, ask: state.ask };
+        persist();
+        renderStats();
+        renderView();
+        toast("학습 기록을 지웠어요.");
+      });
+      const view = document.getElementById("view");
+      view.addEventListener("click", onViewClick);
+      view.addEventListener("submit", onSpellSubmit);
+      view.addEventListener("input", (e) => {
+        if (e.target.id === "listQuery") {
+          state.listQuery = e.target.value;
+          const panel = renderList(filteredWords());
+          const pos = e.target.selectionStart;
+          view.innerHTML = panel;
+          const again = document.getElementById("listQuery");
+          again.focus();
+          again.selectionStart = again.selectionEnd = pos;
+        }
+      });
+      view.addEventListener("change", (e) => {
+        if (e.target.id === "listStatus") {
+          state.listStatus = e.target.value;
+          renderView();
+        }
+      });
+      document.addEventListener("pointerdown", () => { state.unlocked = true; }, { once: true });
+      document.addEventListener("keydown", (e) => {
+        if (e.target.matches("input, textarea, select")) return;
+        if (state.mode === "cards") {
+          if (e.key === " ") {
+            e.preventDefault();
+            if (!state.card) return;
+            state.flipped = !state.flipped;
+            const flip = document.querySelector(".flip");
+            if (flip) flip.classList.toggle("is-flipped", state.flipped);
+            document.querySelectorAll(".btn[data-action='flip']").forEach((el) => {
+              el.textContent = state.flipped ? "단어 보기" : "뜻 보기";
+            });
+          } else if (e.key === "1") nextCard(true, -1);
+          else if (e.key === "2") nextCard(true, 1);
+          else if (e.key === "ArrowRight") { e.preventDefault(); nextCard(false, 0); }
+          else if ((e.key === "s" || e.key === "S") && state.card) say(state.card.en);
+        } else if (state.mode === "quiz" && state.quiz && !state.quiz.picked && "1234".includes(e.key)) {
+          const option = state.quiz.options[Number(e.key) - 1];
+          if (!option) return;
+          state.quiz.picked = option.id;
+          grade(state.quiz.word.id, option.id === state.quiz.word.id ? 1 : -1);
+          renderView();
+          if (option.id === state.quiz.word.id && state.quiz.ask === "ko") say(state.quiz.word.en);
+        }
+      });
+    }
+
+    function init() {
+      state.topic = saveData.topic || "all";
+      state.level = saveData.level || "all";
+      state.mode = saveData.mode || "cards";
+      state.ask = saveData.ask || "en";
+      document.getElementById("autoSpeak").checked = saveData.autoSpeak !== false;
+      if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => {};
+      bind();
+      renderChips();
+      renderStats();
+      renderView();
+    }
+
+    init();
+  </script>
+</body>
+</html>
